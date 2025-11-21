@@ -1,13 +1,13 @@
-// ------------------------------
+// --------------------------------------------------
 // CONFIG
-// ------------------------------
+// --------------------------------------------------
 const BACKEND_URL = "http://127.0.0.1:8000/identify";
 
 console.log("Service Worker Loaded");
 
-// ------------------------------
-// CREATE CONTEXT MENU (ALWAYS RE-CREATE)
-// ------------------------------
+// --------------------------------------------------
+// CREATE CONTEXT MENU
+// --------------------------------------------------
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Extension installed → creating context menu");
 
@@ -22,9 +22,9 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// ------------------------------
-// IMAGE → BASE64 CONVERTER
-// ------------------------------
+// --------------------------------------------------
+// IMAGE → BASE64 CONVERSION
+// --------------------------------------------------
 async function fetchImageAsBase64(url) {
   const resp = await fetch(url);
   const blob = await resp.blob();
@@ -37,17 +37,38 @@ async function fetchImageAsBase64(url) {
   });
 }
 
-// ------------------------------
+// --------------------------------------------------
 // RIGHT-CLICK HANDLER
-// ------------------------------
+// --------------------------------------------------
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== "identify-image") return;
 
   console.log("Right-click triggered:", info.srcUrl);
 
   try {
+    // --------------------------------------------------
+    // STEP 1: Inject toast.js and show LOADER immediately
+    // --------------------------------------------------
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tab.id },
+        files: ["toast.js"]
+      },
+      () => {
+        chrome.tabs.sendMessage(tab.id, { action: "loader" }, () => {
+          console.log("Loader toast triggered");
+        });
+      }
+    );
+
+    // --------------------------------------------------
+    // STEP 2: Convert image → Base64
+    // --------------------------------------------------
     const base64 = await fetchImageAsBase64(info.srcUrl);
 
+    // --------------------------------------------------
+    // STEP 3: Call backend
+    // --------------------------------------------------
     const response = await fetch(BACKEND_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -59,28 +80,32 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     const movie = data.best_guess || data.gemini || {};
 
-    // ------------------------------
-    // Inject toast.js BEFORE sending message
-    // ------------------------------
-    chrome.scripting.executeScript(
-      {
-        target: { tabId: tab.id },
-        files: ["toast.js"]
-      },
+    // --------------------------------------------------
+    // STEP 4: Replace loader → Show final toast
+    // --------------------------------------------------
+    chrome.tabs.sendMessage(
+      tab.id,
+      { action: "showToast", movie },
       () => {
-        console.log("toast.js injected");
-
-        chrome.tabs.sendMessage(
-          tab.id,
-          { action: "showToast", movie },
-          () => {
-            console.log("SendMessage error:", chrome.runtime.lastError);
-          }
-        );
+        if (chrome.runtime.lastError)
+          console.warn("Toast delivery error:", chrome.runtime.lastError);
       }
     );
 
   } catch (err) {
     console.error("Identify error:", err);
+
+    // Optional: show error toast
+    chrome.tabs.sendMessage(tab.id, {
+      action: "showToast",
+      movie: {
+        movie: "Error",
+        scene_description: err.message,
+        actors: [],
+        characters: [],
+        location_in_movie: "",
+        confidence: 0
+      }
+    });
   }
 });
