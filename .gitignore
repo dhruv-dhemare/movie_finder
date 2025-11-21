@@ -1,0 +1,43 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# ---- Virtual Environment ----
+venv/
+ENV/
+env/
+.virtualenv/
+
+# ---- FastAPI / Cache / Build ----
+*.log
+*.egg-info/
+*.dist-info/
+*.DS_Store
+
+# ---- IDE / Editor ----
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ---- Backup / Temporary Files ----
+*.tmp
+*.temp
+*.swp
+*~
+*.bak
+
+# ---- OS ----
+Thumbs.db
+
+# ---- Project Specific ----
+models/.env     # hide your env file
+*.env           # hide all env files anywhere
+
+# ---- FFmpeg temp ----
+*.par
+temp/
+tmp/
