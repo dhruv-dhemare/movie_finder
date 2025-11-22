@@ -35,8 +35,6 @@ Thumbs.db
 
 # ---- Project Specific ----
 models/.env     # hide your env file
-*.env           # hide all env files anywhere
-
 
 # ---- FFmpeg temp ----
 *.par
