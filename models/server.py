@@ -1,8 +1,4 @@
 
-# server_high_accuracy_pipeline.py - High-accuracy movie-scene identification
-# Implements scene-detection sampling, face-prioritized frame selection, multi-frame Gemini
-# prompts, and robust fallbacks. Designed as a drop-in replacement for your previous server.py.
-
 import os
 import io
 import json
